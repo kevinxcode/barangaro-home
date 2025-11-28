@@ -12,6 +12,17 @@ export default function RegisterScreen({ navigation }) {
   });
   const [ktpImage, setKtpImage] = useState(null);
 
+  const convertToBase64 = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const pickImage = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -29,10 +40,12 @@ export default function RegisterScreen({ navigation }) {
             const result = await ImagePicker.launchCameraAsync({
               allowsEditing: true,
               aspect: [16, 9],
-              quality: 0.8,
+              quality: 0.5,
+              base64: true,
             });
             if (!result.canceled) {
-              setKtpImage(result.assets[0].uri);
+              const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
+              setKtpImage(base64);
             }
           },
         },
@@ -42,10 +55,12 @@ export default function RegisterScreen({ navigation }) {
             const result = await ImagePicker.launchImageLibraryAsync({
               allowsEditing: true,
               aspect: [16, 9],
-              quality: 0.8,
+              quality: 0.5,
+              base64: true,
             });
             if (!result.canceled) {
-              setKtpImage(result.assets[0].uri);
+              const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
+              setKtpImage(base64);
             }
           },
         },
@@ -59,6 +74,12 @@ export default function RegisterScreen({ navigation }) {
       Alert.alert('Error', 'Semua field harus diisi');
       return;
     }
+    // Data siap dikirim ke backend dengan ktpImage dalam format base64
+    const dataToSend = {
+      ...formData,
+      foto_ktp: ktpImage, // Base64 string
+    };
+    console.log('Data ready to send:', { ...dataToSend, foto_ktp: 'base64_string...' });
     Alert.alert('Sukses', 'Pendaftaran berhasil! Menunggu verifikasi admin.', [
       { text: 'OK', onPress: () => navigation.navigate('Login') }
     ]);
