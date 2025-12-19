@@ -7,16 +7,15 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   
   const [bills] = useState([
-    { id: 1, type: 'Iuran Bulanan', month: 'Januari 2024', amount: 150000, paid: true, icon: 'calendar' },
-    { id: 2, type: 'Iuran Bulanan', month: 'Februari 2024', amount: 150000, paid: false, icon: 'calendar' },
-    { id: 3, type: 'Iuran Bulanan', month: 'Maret 2024', amount: 150000, paid: false, icon: 'calendar' },
-    { id: 4, type: 'Uang Keamanan', month: 'Januari 2024', amount: 100000, paid: true, icon: 'shield-checkmark' },
-    { id: 5, type: 'Uang Keamanan', month: 'Februari 2024', amount: 100000, paid: false, icon: 'shield-checkmark' },
-    { id: 6, type: 'Iuran 17an', month: '2024', amount: 200000, paid: false, icon: 'flag' },
+    { id: 5, type: 'Iuran Warga', month: 'Desember 2025', amount: 100000, status: 'unpaid', icon: 'calendar' },
+    { id: 4, type: 'Iuran Warga', month: 'November 2025', amount: 100000, status: 'pending', icon: 'calendar' },
+    { id: 3, type: 'Iuran Warga', month: 'Oktober 2025', amount: 100000, status: 'paid', icon: 'calendar', verifiedDate: '2025-10-12' },
+    { id: 2, type: 'Iuran Warga', month: 'September 2025', amount: 100000, status: 'paid', icon: 'calendar', verifiedDate: '2025-09-11' },
+    { id: 1, type: 'Iuran Warga', month: 'Agustus 2025', amount: 100000, status: 'paid', icon: 'calendar', verifiedDate: '2025-08-10' },
   ]);
 
-  const unpaidCount = bills.filter(b => !b.paid).length;
-  const totalUnpaid = bills.filter(b => !b.paid).reduce((sum, b) => sum + b.amount, 0);
+  const unpaidCount = bills.filter(b => b.status === 'unpaid').length;
+  const totalUnpaid = bills.filter(b => b.status === 'unpaid').reduce((sum, b) => sum + b.amount, 0);
 
   const handlePayment = (bill) => {
     navigation.navigate('Payment', { bill });
@@ -63,11 +62,16 @@ export default function HomeScreen() {
               <Text style={styles.billMonth}>{bill.month}</Text>
               <Text style={styles.billAmount}>Rp {bill.amount.toLocaleString('id-ID')}</Text>
             </View>
-            {bill.paid ? (
-              <View style={styles.paidBadge}>
+            {bill.status === 'paid' ? (
+              <TouchableOpacity style={styles.paidBadge} onPress={() => navigation.navigate('PaymentVerified', { payment: bill })}>
                 <Ionicons name="checkmark-circle" size={20} color="#fff" />
                 <Text style={styles.paidText}>Lunas</Text>
-              </View>
+              </TouchableOpacity>
+            ) : bill.status === 'pending' ? (
+              <TouchableOpacity style={styles.pendingBadge} onPress={() => navigation.navigate('PaymentStatus', { payment: bill })}>
+                <Ionicons name="time" size={20} color="#FF9800" />
+                <Text style={styles.pendingText}>Verifikasi</Text>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.payButton} onPress={() => handlePayment(bill)}>
                 <Text style={styles.payButtonText}>Bayar</Text>
@@ -235,6 +239,22 @@ const styles = StyleSheet.create({
   },
   paidText: {
     color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginLeft: 5,
+  },
+  pendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
+  pendingText: {
+    color: '#FF9800',
     fontWeight: 'bold',
     fontSize: 13,
     marginLeft: 5,

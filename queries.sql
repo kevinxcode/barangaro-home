@@ -75,18 +75,36 @@ SELECT COUNT(*) as total_bills, SUM(amount) as total_amount
 FROM bills
 WHERE user_id = 1 AND status = 'unpaid';
 
--- Generate tagihan bulanan untuk semua warga
+-- Generate tagihan bulanan untuk semua warga (Agustus - Desember 2025)
 INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
-SELECT u.id, bt.id, '2024-03', bt.amount, '2024-03-10', 'unpaid'
+SELECT u.id, bt.id, '2025-08', bt.amount, '2025-08-10', 'unpaid'
 FROM users u
 CROSS JOIN bill_types bt
 WHERE u.role = 'warga' AND u.status = 'active' AND bt.is_recurring = TRUE;
 
--- Generate tagihan khusus (non-recurring)
 INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
-SELECT u.id, 3, '2024', 200000, '2024-08-17', 'unpaid'
+SELECT u.id, bt.id, '2025-09', bt.amount, '2025-09-10', 'unpaid'
 FROM users u
-WHERE u.role = 'warga' AND u.status = 'active';
+CROSS JOIN bill_types bt
+WHERE u.role = 'warga' AND u.status = 'active' AND bt.is_recurring = TRUE;
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, bt.id, '2025-10', bt.amount, '2025-10-10', 'unpaid'
+FROM users u
+CROSS JOIN bill_types bt
+WHERE u.role = 'warga' AND u.status = 'active' AND bt.is_recurring = TRUE;
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, bt.id, '2025-11', bt.amount, '2025-11-10', 'unpaid'
+FROM users u
+CROSS JOIN bill_types bt
+WHERE u.role = 'warga' AND u.status = 'active' AND bt.is_recurring = TRUE;
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, bt.id, '2025-12', bt.amount, '2025-12-10', 'unpaid'
+FROM users u
+CROSS JOIN bill_types bt
+WHERE u.role = 'warga' AND u.status = 'active' AND bt.is_recurring = TRUE;
 
 -- Update status tagihan menjadi paid
 UPDATE bills 
@@ -100,12 +118,14 @@ SELECT
     COUNT(*) as total_bills,
     SUM(CASE WHEN b.status = 'paid' THEN 1 ELSE 0 END) as paid_count,
     SUM(CASE WHEN b.status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count,
+    SUM(CASE WHEN b.status = 'pending' THEN 1 ELSE 0 END) as pending_count,
     SUM(CASE WHEN b.status = 'paid' THEN b.amount ELSE 0 END) as total_paid,
     SUM(CASE WHEN b.status = 'unpaid' THEN b.amount ELSE 0 END) as total_unpaid
 FROM bills b
 JOIN bill_types bt ON b.bill_type_id = bt.id
-WHERE b.month = '2024-03'
-GROUP BY b.month, bt.name;
+WHERE b.month BETWEEN '2025-08' AND '2025-12'
+GROUP BY b.month, bt.name
+ORDER BY b.month DESC;
 
 
 -- ============================================

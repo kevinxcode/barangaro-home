@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function HistoryScreen() {
   const [history] = useState([
-    { id: 1, month: 'Januari 2024', amount: 150000, date: '2024-01-05', status: 'Lunas' },
-    { id: 2, month: 'Desember 2023', amount: 150000, date: '2023-12-03', status: 'Lunas' },
-    { id: 3, month: 'November 2023', amount: 150000, date: '2023-11-02', status: 'Lunas' },
+    { id: 1, type: 'Iuran Warga', month: 'Oktober 2025', amount: 100000, date: '2025-10-12', status: 'Lunas' },
+    { id: 2, type: 'Iuran Warga', month: 'September 2025', amount: 100000, date: '2025-09-11', status: 'Lunas' },
+    { id: 3, type: 'Iuran Warga', month: 'Agustus 2025', amount: 100000, date: '2025-08-10', status: 'Lunas' },
   ]);
 
   return (
@@ -18,8 +18,9 @@ export default function HistoryScreen() {
               <Ionicons name="checkmark-circle" size={40} color="#4CAF50" />
             </View>
             <View style={styles.historyInfo}>
+              <Text style={styles.type}>{item.type}</Text>
               <Text style={styles.month}>{item.month}</Text>
-              <Text style={styles.date}>{item.date}</Text>
+              <Text style={styles.date}>Dibayar: {item.date}</Text>
               <Text style={styles.amount}>Rp {item.amount.toLocaleString('id-ID')}</Text>
             </View>
             <View style={styles.statusBadge}>
@@ -54,6 +55,12 @@ const styles = StyleSheet.create({
   },
   historyInfo: {
     flex: 1,
+  },
+  type: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#a32620',
+    marginBottom: 2,
   },
   month: {
     fontSize: 16,

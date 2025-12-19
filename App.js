@@ -14,6 +14,8 @@ import PaymentScreen from './components/PaymentScreen';
 import NotificationScreen from './components/NotificationScreen';
 import HistoryScreen from './components/HistoryScreen';
 import NewsDetailScreen from './components/NewsDetailScreen';
+import PaymentStatusScreen from './components/PaymentStatusScreen';
+import PaymentVerifiedScreen from './components/PaymentVerifiedScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -118,6 +120,29 @@ export default function App() {
           options={{
             headerShown: true,
             title: 'Detail Berita',
+            headerStyle: { backgroundColor: '#a32620' },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: '500' },
+          }}
+        />
+        <Stack.Screen
+          name="PaymentStatus"
+          component={PaymentStatusScreen}
+          options={{
+            headerShown: true,
+            title: 'Status Pembayaran',
+            headerStyle: { backgroundColor: '#a32620' },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: '500' },
+            headerLeft: () => null,
+          }}
+        />
+        <Stack.Screen
+          name="PaymentVerified"
+          component={PaymentVerifiedScreen}
+          options={{
+            headerShown: true,
+            title: 'Detail Pembayaran',
             headerStyle: { backgroundColor: '#a32620' },
             headerTintColor: '#fff',
             headerTitleStyle: { fontWeight: '500' },

@@ -77,9 +77,8 @@ export default function PaymentScreen({ route, navigation }) {
       proof_image: proofImage,
     };
     console.log('Payment data ready:', { ...paymentData, proof_image: 'base64_string...' });
-    Alert.alert('Sukses', 'Pembayaran berhasil dikirim! Menunggu verifikasi admin.', [
-      { text: 'OK', onPress: () => navigation.goBack() }
-    ]);
+    // Navigate ke status screen
+    navigation.replace('PaymentStatus', { payment: bill });
   };
 
   return (

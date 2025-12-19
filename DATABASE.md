@@ -33,9 +33,7 @@ Menyimpan jenis-jenis iuran
 | created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Tanggal dibuat |
 
 **Contoh Data:**
-- Iuran Bulanan (Rp 150.000)
-- Uang Keamanan (Rp 100.000)
-- Iuran 17an (Rp 200.000)
+- Iuran Warga (Rp 100.000)
 
 ---
 
@@ -49,7 +47,7 @@ Menyimpan tagihan untuk setiap warga
 | bill_type_id | INT | FOREIGN KEY → bill_types(id) | ID jenis iuran |
 | month | VARCHAR(20) | NOT NULL | Bulan tagihan (YYYY-MM) |
 | amount | DECIMAL(10,2) | NOT NULL | Nominal tagihan |
-| status | ENUM('unpaid','paid','overdue') | DEFAULT 'unpaid' | Status pembayaran |
+| status | ENUM('unpaid','paid','pending','overdue') | DEFAULT 'unpaid' | Status pembayaran |
 | due_date | DATE | NULL | Tanggal jatuh tempo |
 | created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Tanggal dibuat |
 
@@ -120,6 +118,41 @@ Menyimpan session login (opsional, bisa pakai JWT)
 
 ---
 
+## 8. Tabel `payment_history`
+Menyimpan log perubahan status pembayaran untuk audit trail
+
+| Field | Type | Constraint | Keterangan |
+|-------|------|------------|------------|
+| id | INT | PRIMARY KEY, AUTO_INCREMENT | ID history |
+| payment_id | INT | FOREIGN KEY → payments(id) | ID pembayaran |
+| old_status | VARCHAR(50) | NULL | Status lama |
+| new_status | VARCHAR(50) | NOT NULL | Status baru |
+| changed_by | INT | FOREIGN KEY → users(id) | User yang mengubah |
+| notes | TEXT | NULL | Catatan perubahan |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Tanggal perubahan |
+
+---
+
+## 9. Tabel `settings`
+Menyimpan konfigurasi sistem
+
+| Field | Type | Constraint | Keterangan |
+|-------|------|------------|------------|
+| id | INT | PRIMARY KEY, AUTO_INCREMENT | ID setting |
+| key_name | VARCHAR(100) | UNIQUE, NOT NULL | Nama setting |
+| value | TEXT | NOT NULL | Nilai setting |
+| description | TEXT | NULL | Deskripsi setting |
+| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | Tanggal update |
+
+**Contoh Data:**
+- bank_name: Bank Central Asia (BCA)
+- bank_account: 123-000-1233
+- bank_account_name: Barangaro Kirana Homes
+- bill_due_day: 10 (tanggal jatuh tempo setiap bulan)
+- late_fee_amount: 10000 (denda keterlambatan)
+
+---
+
 ## Relasi Antar Tabel
 
 ```
@@ -128,10 +161,13 @@ users (1) ──→ (N) payments
 users (1) ──→ (N) news (sebagai author)
 users (1) ──→ (N) notifications
 users (1) ──→ (N) sessions
+users (1) ──→ (N) payment_history
 
 bill_types (1) ──→ (N) bills
 
 bills (1) ──→ (N) payments
+
+payments (1) ──→ (N) payment_history
 ```
 
 ---
@@ -175,7 +211,7 @@ CREATE TABLE bills (
     bill_type_id INT NOT NULL,
     month VARCHAR(20) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
-    status ENUM('unpaid','paid','overdue') DEFAULT 'unpaid',
+    status ENUM('unpaid','paid','pending','overdue') DEFAULT 'unpaid',
     due_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -237,15 +273,64 @@ CREATE TABLE sessions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Tabel payment_history
+CREATE TABLE payment_history (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    payment_id INT NOT NULL,
+    old_status VARCHAR(50),
+    new_status VARCHAR(50) NOT NULL,
+    changed_by INT NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
+    FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tabel settings
+CREATE TABLE settings (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    key_name VARCHAR(100) UNIQUE NOT NULL,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Insert data default admin
 INSERT INTO users (email, password, nama, telepon, nomor_rumah, role, status) 
 VALUES ('admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', '081234567890', 'A-000', 'admin', 'active');
 
 -- Insert data jenis iuran
 INSERT INTO bill_types (name, amount, icon, description, is_recurring) VALUES
-('Iuran Bulanan', 150000.00, 'calendar', 'Iuran wajib bulanan untuk operasional RT', TRUE),
-('Uang Keamanan', 100000.00, 'shield-checkmark', 'Iuran keamanan lingkungan', TRUE),
-('Iuran 17an', 200000.00, 'flag', 'Iuran untuk perayaan kemerdekaan', FALSE);
+('Iuran Warga', 100000.00, 'calendar', 'Iuran wajib bulanan untuk operasional RT', TRUE);
+
+-- Generate tagihan Agustus - Desember 2025 untuk semua warga aktif
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, 1, '2025-08', 100000, '2025-08-10', 'unpaid'
+FROM users u WHERE u.role = 'warga' AND u.status = 'active';
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, 1, '2025-09', 100000, '2025-09-10', 'unpaid'
+FROM users u WHERE u.role = 'warga' AND u.status = 'active';
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, 1, '2025-10', 100000, '2025-10-10', 'unpaid'
+FROM users u WHERE u.role = 'warga' AND u.status = 'active';
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, 1, '2025-11', 100000, '2025-11-10', 'unpaid'
+FROM users u WHERE u.role = 'warga' AND u.status = 'active';
+
+INSERT INTO bills (user_id, bill_type_id, month, amount, due_date, status)
+SELECT u.id, 1, '2025-12', 100000, '2025-12-10', 'unpaid'
+FROM users u WHERE u.role = 'warga' AND u.status = 'active';
+
+-- Insert data settings
+INSERT INTO settings (key_name, value, description) VALUES
+('bank_name', 'Bank Central Asia (BCA)', 'Nama bank untuk transfer'),
+('bank_account', '123-000-1233', 'Nomor rekening'),
+('bank_account_name', 'Barangaro Kirana Homes', 'Nama pemilik rekening'),
+('bill_due_day', '10', 'Tanggal jatuh tempo setiap bulan'),
+('late_fee_amount', '10000', 'Denda keterlambatan per bulan');
 ```
 
 ---
@@ -260,4 +345,27 @@ CREATE INDEX idx_payments_user ON payments(user_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_notifications_user_read ON notifications(user_id, is_read);
 CREATE INDEX idx_news_category ON news(category);
+CREATE INDEX idx_payment_history_payment ON payment_history(payment_id);
+CREATE INDEX idx_settings_key ON settings(key_name);
+```
+
+---
+
+## Trigger untuk Audit Trail
+
+```sql
+-- Trigger untuk mencatat perubahan status payment
+DELIMITER $$
+
+CREATE TRIGGER after_payment_status_update
+AFTER UPDATE ON payments
+FOR EACH ROW
+BEGIN
+    IF OLD.status != NEW.status THEN
+        INSERT INTO payment_history (payment_id, old_status, new_status, changed_by, notes)
+        VALUES (NEW.id, OLD.status, NEW.status, NEW.verified_by, NEW.notes);
+    END IF;
+END$$
+
+DELIMITER ;
 ```
