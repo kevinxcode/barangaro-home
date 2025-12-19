@@ -66,7 +66,7 @@ Menyimpan riwayat pembayaran
 | amount | DECIMAL(10,2) | NOT NULL | Nominal dibayar |
 | payment_method | VARCHAR(50) | NOT NULL | Metode pembayaran |
 | payment_date | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Tanggal pembayaran |
-| proof_image | VARCHAR(255) | NULL | Bukti transfer |
+| proof_image | LONGTEXT | NULL | Base64 bukti transfer |
 | status | ENUM('pending','verified','rejected') | DEFAULT 'pending' | Status verifikasi |
 | verified_by | INT | FOREIGN KEY → users(id), NULL | Admin yang verifikasi |
 | verified_at | TIMESTAMP | NULL | Tanggal verifikasi |
@@ -190,7 +190,7 @@ CREATE TABLE payments (
     amount DECIMAL(10,2) NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    proof_image VARCHAR(255),
+    proof_image LONGTEXT,
     status ENUM('pending','verified','rejected') DEFAULT 'pending',
     verified_by INT,
     verified_at TIMESTAMP NULL,

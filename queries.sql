@@ -112,9 +112,28 @@ GROUP BY b.month, bt.name;
 -- 3. QUERY UNTUK PAYMENTS/PEMBAYARAN
 -- ============================================
 
--- Insert pembayaran baru
+-- Insert pembayaran baru (dari mobile app)
 INSERT INTO payments (bill_id, user_id, amount, payment_method, proof_image, status)
-VALUES (1, 1, 150000, 'Transfer Bank', 'data:image/jpeg;base64,/9j/4AAQ...', 'pending');
+VALUES (
+    1, 
+    1, 
+    150000, 
+    'Transfer Bank', 
+    'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...', 
+    'pending'
+);
+
+-- Insert pembayaran dengan info lengkap
+INSERT INTO payments (bill_id, user_id, amount, payment_method, proof_image, status, notes)
+VALUES (
+    1, 
+    1, 
+    150000, 
+    'Transfer Bank BCA', 
+    'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...', 
+    'pending',
+    'Transfer ke rekening 123-000-1233 BCA a.n. Barangaro Kirana Homes'
+);
 
 -- Get riwayat pembayaran user
 SELECT 
@@ -126,10 +145,10 @@ JOIN bill_types bt ON b.bill_type_id = bt.id
 WHERE p.user_id = 1 AND p.status = 'verified'
 ORDER BY p.payment_date DESC;
 
--- Get pembayaran pending verifikasi
+-- Get pembayaran pending verifikasi (untuk admin)
 SELECT 
-    p.id, p.amount, p.payment_method, p.payment_date, p.proof_image,
-    u.nama, u.nomor_rumah,
+    p.id, p.amount, p.payment_method, p.payment_date, p.proof_image, p.notes,
+    u.nama, u.nomor_rumah, u.telepon,
     b.month, bt.name as bill_type
 FROM payments p
 JOIN users u ON p.user_id = u.id
@@ -138,20 +157,52 @@ JOIN bill_types bt ON b.bill_type_id = bt.id
 WHERE p.status = 'pending'
 ORDER BY p.payment_date DESC;
 
--- Verifikasi pembayaran oleh admin
+-- Get detail pembayaran untuk verifikasi (termasuk base64 image)
+SELECT 
+    p.id, p.amount, p.payment_method, p.payment_date, p.proof_image, p.notes,
+    u.id as user_id, u.nama, u.nomor_rumah, u.telepon, u.email,
+    b.id as bill_id, b.month, b.amount as bill_amount,
+    bt.name as bill_type
+FROM payments p
+JOIN users u ON p.user_id = u.id
+JOIN bills b ON p.bill_id = b.id
+JOIN bill_types bt ON b.bill_type_id = bt.id
+WHERE p.id = 1;
+
+-- Verifikasi pembayaran oleh admin (dengan transaction)
+START TRANSACTION;
+
+-- Update payment status
 UPDATE payments 
 SET status = 'verified', verified_by = 1, verified_at = NOW() 
 WHERE id = 1;
 
--- Update status bill setelah pembayaran diverifikasi
+-- Update bill status
 UPDATE bills 
 SET status = 'paid' 
 WHERE id = (SELECT bill_id FROM payments WHERE id = 1);
 
--- Reject pembayaran
+-- Insert notifikasi ke user
+INSERT INTO notifications (user_id, title, message, type)
+SELECT user_id, 'Pembayaran Berhasil', CONCAT('Pembayaran untuk ', (SELECT CONCAT(bt.name, ' ', b.month) FROM bills b JOIN bill_types bt ON b.bill_type_id = bt.id WHERE b.id = bill_id), ' telah diverifikasi'), 'payment'
+FROM payments WHERE id = 1;
+
+COMMIT;
+
+-- Reject pembayaran (dengan notifikasi)
+START TRANSACTION;
+
+-- Update payment status
 UPDATE payments 
 SET status = 'rejected', verified_by = 1, verified_at = NOW(), notes = 'Bukti transfer tidak valid' 
 WHERE id = 1;
+
+-- Insert notifikasi ke user
+INSERT INTO notifications (user_id, title, message, type)
+SELECT user_id, 'Pembayaran Ditolak', CONCAT('Pembayaran ditolak. Alasan: ', notes), 'payment'
+FROM payments WHERE id = 1;
+
+COMMIT;
 
 -- Laporan pembayaran per bulan
 SELECT 
