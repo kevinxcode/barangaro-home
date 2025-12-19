@@ -6,7 +6,15 @@ import * as Clipboard from 'expo-clipboard';
 
 export default function PaymentScreen({ route, navigation }) {
   const { bill } = route.params;
+  const [selectedMethod, setSelectedMethod] = useState(null);
   const [proofImage, setProofImage] = useState(null);
+
+  const paymentMethods = [
+    { id: 1, name: 'Transfer Bank', icon: 'card-outline', type: 'bank' },
+    { id: 2, name: 'GoPay', icon: 'wallet-outline', type: 'ewallet' },
+    { id: 3, name: 'OVO', icon: 'wallet-outline', type: 'ewallet' },
+    { id: 4, name: 'DANA', icon: 'wallet-outline', type: 'ewallet' },
+  ];
 
   const bankInfo = {
     bank: 'Bank Central Asia (BCA)',
@@ -14,9 +22,20 @@ export default function PaymentScreen({ route, navigation }) {
     accountName: 'Barangaro Kirana Homes',
   };
 
-  const copyToClipboard = async (text) => {
+  const ewalletInfo = {
+    phoneNumber: '082181870614',
+    accountName: 'Barangaro Kirana Homes',
+  };
+
+  const copyToClipboard = async (text, type) => {
     await Clipboard.setStringAsync(text);
-    Alert.alert('Sukses', 'Nomor rekening disalin');
+    if (type === 'amount') {
+      Alert.alert('Sukses', 'Nominal disalin');
+    } else if (type === 'account') {
+      Alert.alert('Sukses', 'Nomor rekening disalin');
+    } else if (type === 'phone') {
+      Alert.alert('Sukses', 'Nomor disalin');
+    }
   };
 
   const pickImage = async () => {
@@ -33,8 +52,7 @@ export default function PaymentScreen({ route, navigation }) {
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [3, 4],
+              allowsEditing: false,
               quality: 0.5,
               base64: true,
             });
@@ -48,8 +66,7 @@ export default function PaymentScreen({ route, navigation }) {
           text: 'Pilih dari Galeri',
           onPress: async () => {
             const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              aspect: [3, 4],
+              allowsEditing: false,
               quality: 0.5,
               base64: true,
             });
@@ -65,15 +82,19 @@ export default function PaymentScreen({ route, navigation }) {
   };
 
   const handlePayment = () => {
+    if (!selectedMethod) {
+      Alert.alert('Error', 'Pilih metode pembayaran terlebih dahulu');
+      return;
+    }
     if (!proofImage) {
-      Alert.alert('Error', 'Upload bukti transfer terlebih dahulu');
+      Alert.alert('Error', 'Upload bukti pembayaran terlebih dahulu');
       return;
     }
     // Data siap dikirim ke backend
     const paymentData = {
       bill_id: bill.id,
       amount: bill.amount,
-      payment_method: 'Transfer Bank',
+      payment_method: paymentMethods.find(m => m.id === selectedMethod).name,
       proof_image: proofImage,
     };
     console.log('Payment data ready:', { ...paymentData, proof_image: 'base64_string...' });
@@ -88,13 +109,38 @@ export default function PaymentScreen({ route, navigation }) {
           <Text style={styles.label}>Detail Tagihan</Text>
           <Text style={styles.billType}>{bill.type}</Text>
           <Text style={styles.month}>{bill.month}</Text>
-          <Text style={styles.amount}>Rp {bill.amount.toLocaleString('id-ID')}</Text>
+          <View style={styles.amountRow}>
+            <Text style={styles.amount}>Rp {bill.amount.toLocaleString('id-ID')}</Text>
+            <TouchableOpacity onPress={() => copyToClipboard(bill.amount.toString(), 'amount')} style={styles.copyButton}>
+              <Ionicons name="copy-outline" size={20} color="#a32620" />
+            </TouchableOpacity>
+          </View>
         </View>
 
+        <View style={styles.methodSection}>
+          <Text style={styles.sectionTitle}>Pilih Metode Pembayaran</Text>
+          {paymentMethods.map(method => (
+            <TouchableOpacity
+              key={method.id}
+              style={[styles.methodCard, selectedMethod === method.id && styles.methodCardSelected]}
+              onPress={() => setSelectedMethod(method.id)}
+            >
+              <Ionicons name={method.icon} size={24} color={selectedMethod === method.id ? '#a32620' : '#666'} />
+              <Text style={[styles.methodName, selectedMethod === method.id && styles.methodNameSelected]}>
+                {method.name}
+              </Text>
+              {selectedMethod === method.id && (
+                <Ionicons name="checkmark-circle" size={24} color="#a32620" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {selectedMethod === 1 && (
         <View style={styles.bankInfoCard}>
           <View style={styles.bankHeader}>
             <Ionicons name="card" size={24} color="#a32620" />
-            <Text style={styles.sectionTitle}>Informasi Transfer</Text>
+            <Text style={styles.sectionTitle}>Informasi Transfer Bank</Text>
           </View>
           
           <View style={styles.infoRow}>
@@ -106,7 +152,7 @@ export default function PaymentScreen({ route, navigation }) {
             <Text style={styles.infoLabel}>Nomor Rekening</Text>
             <View style={styles.accountRow}>
               <Text style={styles.accountNumber}>{bankInfo.accountNumber}</Text>
-              <TouchableOpacity onPress={() => copyToClipboard(bankInfo.accountNumber)} style={styles.copyButton}>
+              <TouchableOpacity onPress={() => copyToClipboard(bankInfo.accountNumber, 'account')} style={styles.copyButton}>
                 <Ionicons name="copy-outline" size={20} color="#a32620" />
               </TouchableOpacity>
             </View>
@@ -117,7 +163,28 @@ export default function PaymentScreen({ route, navigation }) {
             <Text style={styles.infoValue}>{bankInfo.accountName}</Text>
           </View>
         </View>
+        )}
 
+        {selectedMethod && selectedMethod !== 1 && (
+        <View style={styles.bankInfoCard}>
+          <View style={styles.bankHeader}>
+            <Ionicons name="wallet" size={24} color="#a32620" />
+            <Text style={styles.sectionTitle}>Informasi E-Wallet</Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Nomor {paymentMethods.find(m => m.id === selectedMethod)?.name}</Text>
+            <View style={styles.accountRow}>
+              <Text style={styles.accountNumber}>{ewalletInfo.phoneNumber}</Text>
+              <TouchableOpacity onPress={() => copyToClipboard(ewalletInfo.phoneNumber, 'phone')} style={styles.copyButton}>
+                <Ionicons name="copy-outline" size={20} color="#a32620" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        )}
+
+        {selectedMethod && (
         <View style={styles.uploadSection}>
           <Text style={styles.sectionTitle}>Upload Bukti Transfer</Text>
           <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
@@ -136,6 +203,7 @@ export default function PaymentScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
         </View>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -178,10 +246,53 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 3,
   },
+  methodSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  methodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#eee',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+  },
+  methodCardSelected: {
+    borderColor: '#a32620',
+    backgroundColor: '#fff5f5',
+  },
+  methodName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 15,
+  },
+  methodNameSelected: {
+    color: '#a32620',
+    fontWeight: '600',
+  },
   month: {
     fontSize: 15,
     color: '#666',
     marginBottom: 10,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   amount: {
     fontSize: 28,

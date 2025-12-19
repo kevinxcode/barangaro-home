@@ -38,8 +38,7 @@ export default function RegisterScreen({ navigation }) {
           text: 'Ambil Foto',
           onPress: async () => {
             const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [16, 9],
+              allowsEditing: false,
               quality: 0.5,
               base64: true,
             });
@@ -53,8 +52,7 @@ export default function RegisterScreen({ navigation }) {
           text: 'Pilih dari Galeri',
           onPress: async () => {
             const result = await ImagePicker.launchImageLibraryAsync({
-              allowsEditing: true,
-              aspect: [16, 9],
+              allowsEditing: false,
               quality: 0.5,
               base64: true,
             });
