@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.1.39/project-dev/1.fehri-skripsi/barangaro-home-backend';
+const API_BASE_URL = 'http://192.168.1.39:8000';
 
 export const API = {
   // Auth
