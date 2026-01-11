@@ -62,18 +62,7 @@
             "minSdkVersion": 24
           },
           "ios": {
-            "deploymentTarget": "15.1",
-            "useFrameworks": "static",
-            "extraPods": [
-              {
-                "name": "GoogleUtilities",
-                "modular_headers": true
-              },
-              {
-                "name": "React-Core",
-                "modular_headers": true
-              }
-            ]
+            "deploymentTarget": "15.1"
           }
         }
       ],
@@ -89,10 +78,7 @@
         {
           "android_default_notification_channel_id": "default",
           "android_notification_sound": "default",
-          "android_notification_color": "#a32620",
-          "ios": {
-            "useFrameworks": "static"
-          }
+          "android_notification_color": "#a32620"
         }
       ]
     ],
