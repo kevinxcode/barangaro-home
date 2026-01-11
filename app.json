@@ -68,6 +68,10 @@
               {
                 "name": "GoogleUtilities",
                 "modular_headers": true
+              },
+              {
+                "name": "React-Core",
+                "modular_headers": true
               }
             ]
           }
