@@ -16,8 +16,17 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.barangaro.homes",
       "buildNumber": "1",
+      "entitlements": {
+        "aps-environment": "production"
+      },
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       },
       "googleServicesFile": "./GoogleService-Info.plist"
     },
@@ -28,10 +37,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "usesCleartextTraffic": true,
       "googleServicesFile": "./google-services.json",
       "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.INTERNET",
         "android.permission.WAKE_LOCK",
         "android.permission.VIBRATE"
@@ -51,13 +60,24 @@
         {
           "android": {
             "minSdkVersion": 24
+          },
+          "ios": {
+            "deploymentTarget": "15.1",
+            "useFrameworks": "static",
+            "extraPods": [
+              {
+                "name": "GoogleUtilities",
+                "modular_headers": true
+              }
+            ]
           }
         }
       ],
       [
         "@react-native-firebase/app",
         {
-          "android_package_name": "com.barangaro.homes"
+          "android_package_name": "com.barangaro.homes",
+          "ios_bundle_id": "com.barangaro.homes"
         }
       ],
       [
@@ -65,7 +85,10 @@
         {
           "android_default_notification_channel_id": "default",
           "android_notification_sound": "default",
-          "android_notification_color": "#a32620"
+          "android_notification_color": "#a32620",
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
       ]
     ],
