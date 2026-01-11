@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getApiBaseUrl, getAPI } from '../config/api';
@@ -16,12 +16,15 @@ export default function RegisterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    checkApiUrl();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      checkApiUrl();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const checkApiUrl = async () => {
     const url = await getApiBaseUrl();
-    if (!url || url === 'http://192.168.1.39:8000') {
+    if (!url) {
       Alert.alert('Info', 'Silakan konfigurasi URL API terlebih dahulu', [
         { text: 'OK', onPress: () => navigation.navigate('ApiSettings') }
       ]);
@@ -108,8 +111,15 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <TouchableOpacity 
           style={styles.settingsButton}
           onPress={() => navigation.navigate('ApiSettings')}
@@ -179,7 +189,7 @@ export default function RegisterScreen({ navigation }) {
           <Text style={styles.loginText}>Sudah punya akun? Login</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

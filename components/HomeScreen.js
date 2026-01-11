@@ -8,7 +8,7 @@ import { getAPI } from '../config/api';
 export default function HomeScreen() {
   const navigation = useNavigation();
   const [bills, setBills] = useState([]);
-  const [summary, setSummary] = useState({ total_unpaid: 0, pending_count: 0 });
+  const [summary, setSummary] = useState({ total_unpaid: 0, pending_count: 0, unread_notif_count: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -43,6 +43,7 @@ export default function HomeScreen() {
       const billsData = await billsRes.json();
       const summaryData = await summaryRes.json();
 
+      console.log('Summary data:', summaryData);
       if (billsData.success) setBills(billsData.data);
       if (summaryData.success) setSummary(summaryData.data);
     } catch (error) {
@@ -77,9 +78,9 @@ export default function HomeScreen() {
         </View>
         <TouchableOpacity style={styles.notifContainer} onPress={() => navigation.navigate('Notification')}>
           <Ionicons name="notifications" size={28} color="#a32620" />
-          {summary.pending_count > 0 && (
+          {summary.unread_notif_count > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{summary.pending_count}</Text>
+              <Text style={styles.badgeText}>{summary.unread_notif_count}</Text>
             </View>
           )}
         </TouchableOpacity>

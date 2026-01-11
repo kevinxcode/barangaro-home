@@ -5,6 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import messaging from '@react-native-firebase/messaging';
+import * as Notifications from 'expo-notifications';
 import HomeScreen from './components/HomeScreen';
 import NewsScreen from './components/NewsScreen';
 import AccountScreen from './components/AccountScreen';
@@ -19,6 +21,15 @@ import PaymentVerifiedScreen from './components/PaymentVerifiedScreen';
 import PendingVerificationScreen from './components/PendingVerificationScreen';
 import ApiConfigScreen from './components/ApiConfigScreen';
 import ApiSettingsScreen from './components/ApiSettingsScreen';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,7 +61,35 @@ export default function App() {
 
   useEffect(() => {
     checkSession();
+    setupFirebase();
   }, []);
+
+  const setupFirebase = async () => {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      const token = await messaging().getToken();
+      console.log('FCM Token:', token);
+      
+      await messaging().subscribeToTopic('barangaro_homes');
+      console.log('Subscribed to topic: barangaro_homes');
+    }
+
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: remoteMessage.notification?.title,
+          body: remoteMessage.notification?.body,
+        },
+        trigger: null,
+      });
+    });
+
+    return unsubscribe;
+  };
 
   const checkSession = async () => {
     const session = await AsyncStorage.getItem('session');

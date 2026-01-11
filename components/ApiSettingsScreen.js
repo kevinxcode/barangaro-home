@@ -10,8 +10,11 @@ export default function ApiSettingsScreen({ navigation }) {
   const [currentUrl, setCurrentUrl] = useState('');
 
   useEffect(() => {
-    loadData();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const loadData = async () => {
     const url = await getApiBaseUrl();

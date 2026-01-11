@@ -13,12 +13,15 @@ export default function LoginScreen() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    checkApiUrl();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      checkApiUrl();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const checkApiUrl = async () => {
     const url = await getApiBaseUrl();
-    if (!url || url === 'http://192.168.1.39:8000') {
+    if (!url) {
       Alert.alert('Info', 'Silakan konfigurasi URL API terlebih dahulu', [
         { text: 'OK', onPress: () => navigation.navigate('ApiSettings') }
       ]);

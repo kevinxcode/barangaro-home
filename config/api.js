@@ -2,6 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let API_BASE_URL = 'http://192.168.1.39:8000';
 
+// Load API URL from storage on app start
+(async () => {
+  const url = await AsyncStorage.getItem('api_base_url');
+  if (url) API_BASE_URL = url;
+})();
+
 export const setApiBaseUrl = async (url) => {
   API_BASE_URL = url;
   await AsyncStorage.setItem('api_base_url', url);
