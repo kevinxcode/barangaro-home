@@ -1,5 +1,13 @@
 # Barangaro Home - Mobile App
 
+
+    npx expo prebuild --clean
+    npx expo prebuild --platform android
+    cd android
+    .\gradlew assembleRelease
+
+notification grup topic : barangaro_homes
+
 Aplikasi mobile untuk sistem manajemen iuran warga Barangaro Kirana Homes 2.
 
 ## 🚀 Quick Start
