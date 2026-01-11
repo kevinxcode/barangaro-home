@@ -16,6 +16,9 @@ import HistoryScreen from './components/HistoryScreen';
 import NewsDetailScreen from './components/NewsDetailScreen';
 import PaymentStatusScreen from './components/PaymentStatusScreen';
 import PaymentVerifiedScreen from './components/PaymentVerifiedScreen';
+import PendingVerificationScreen from './components/PendingVerificationScreen';
+import ApiConfigScreen from './components/ApiConfigScreen';
+import ApiSettingsScreen from './components/ApiSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -51,7 +54,17 @@ export default function App() {
 
   const checkSession = async () => {
     const session = await AsyncStorage.getItem('session');
-    setInitialRoute(session ? 'PageHome' : 'Login');
+    if (session) {
+      const userStr = await AsyncStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      if (user && user.status === 'pending') {
+        setInitialRoute('PendingVerification');
+      } else {
+        setInitialRoute('PageHome');
+      }
+    } else {
+      setInitialRoute('Login');
+    }
   };
 
   if (!initialRoute) return null;
@@ -59,6 +72,22 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute}>
+        <Stack.Screen
+          name="ApiSettings"
+          component={ApiSettingsScreen}
+          options={{
+            headerShown: true,
+            title: 'Pengaturan API',
+            headerStyle: { backgroundColor: '#a32620' },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: '500' },
+          }}
+        />
+        <Stack.Screen
+          name="ApiConfig"
+          component={ApiConfigScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -70,6 +99,18 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
+          name="PendingVerification"
+          component={PendingVerificationScreen}
+          options={{
+            headerShown: true,
+            title: 'Verifikasi Akun',
+            headerStyle: { backgroundColor: '#a32620' },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: '500' },
+            headerLeft: () => null,
+          }}
+        />
+        <Stack.Screen
           name="PageHome"
           component={HomeTabs}
           options={{
@@ -79,6 +120,7 @@ export default function App() {
             headerTintColor: '#fff',
             headerTitleStyle: { fontWeight: '500' },
             headerBackTitleVisible: false,
+            headerLeft: () => null,
           }}
         />
         <Stack.Screen

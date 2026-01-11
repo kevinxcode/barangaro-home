@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, ActivityIn
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../config/api';
+import { getAPI } from '../config/api';
 
 export default function NewsScreen() {
   const navigation = useNavigation();
@@ -17,6 +17,7 @@ export default function NewsScreen() {
   const fetchNews = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      const API = getAPI();
       const response = await fetch(API.NEWS, {
         headers: { Authorization: token }
       });

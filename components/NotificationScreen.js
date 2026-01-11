@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../config/api';
+import { getAPI } from '../config/api';
 
 export default function NotificationScreen() {
   const [notifications, setNotifications] = useState([]);
@@ -15,6 +15,7 @@ export default function NotificationScreen() {
   const fetchNotifications = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      const API = getAPI();
       const response = await fetch(API.NOTIFICATIONS, {
         headers: { Authorization: token }
       });

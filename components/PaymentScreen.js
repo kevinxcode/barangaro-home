@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../config/api';
+import { getAPI } from '../config/api';
 
 export default function PaymentScreen({ route, navigation }) {
   const { bill } = route.params;
@@ -22,6 +22,7 @@ export default function PaymentScreen({ route, navigation }) {
   const fetchData = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      const API = getAPI();
       const [methodsRes, bankRes] = await Promise.all([
         fetch(API.PAYMENT_METHODS, { headers: { Authorization: token } }),
         fetch(API.BANK_INFO, { headers: { Authorization: token } })
@@ -110,6 +111,7 @@ export default function PaymentScreen({ route, navigation }) {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
+      const API = getAPI();
       const paymentData = {
         bill_id: bill.id,
         amount: bill.amount,

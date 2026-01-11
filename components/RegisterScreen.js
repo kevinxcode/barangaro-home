@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import API from '../config/api';
+import { getApiBaseUrl, getAPI } from '../config/api';
 
 export default function RegisterScreen({ navigation }) {
   const [formData, setFormData] = useState({
@@ -15,15 +15,17 @@ export default function RegisterScreen({ navigation }) {
   const [ktpImage, setKtpImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const convertToBase64 = async (uri) => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+  useEffect(() => {
+    checkApiUrl();
+  }, []);
+
+  const checkApiUrl = async () => {
+    const url = await getApiBaseUrl();
+    if (!url || url === 'http://192.168.1.39:8000') {
+      Alert.alert('Info', 'Silakan konfigurasi URL API terlebih dahulu', [
+        { text: 'OK', onPress: () => navigation.navigate('ApiSettings') }
+      ]);
+    }
   };
 
   const pickImage = async () => {
@@ -78,6 +80,8 @@ export default function RegisterScreen({ navigation }) {
 
     setLoading(true);
     try {
+      const API = getAPI();
+      
       const response = await fetch(API.REGISTER, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +98,10 @@ export default function RegisterScreen({ navigation }) {
         Alert.alert('Error', data.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'Gagal terhubung ke server');
+      Alert.alert('Koneksi Gagal', 'Tidak dapat terhubung ke server.', [
+        { text: 'Pengaturan API', onPress: () => navigation.navigate('ApiSettings') },
+        { text: 'Coba Lagi', style: 'cancel' }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -103,6 +110,13 @@ export default function RegisterScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('ApiSettings')}
+        >
+          <Ionicons name="settings-outline" size={24} color="#a32620" />
+        </TouchableOpacity>
+
         <Text style={styles.title}>Daftar Akun</Text>
         <Text style={styles.subtitle}>Lengkapi data untuk mendaftar</Text>
 
@@ -178,12 +192,20 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  settingsButton: {
+    alignSelf: 'flex-end',
+    padding: 10,
+    backgroundColor: '#fff5f5',
+    borderRadius: 8,
+    marginBottom: 20,
+    marginTop: 10,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#a32620',
     marginBottom: 5,
-    marginTop: 20,
+    marginTop: 10,
   },
   subtitle: {
     fontSize: 14,

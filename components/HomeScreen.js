@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import API from '../config/api';
+import { getAPI } from '../config/api';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -22,8 +22,7 @@ export default function HomeScreen() {
   const fetchData = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log('Token:', token);
-      console.log('Fetching from:', API.BILLS);
+      const API = getAPI();
       
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
@@ -40,22 +39,14 @@ export default function HomeScreen() {
       ]);
 
       clearTimeout(timeout);
-      console.log('Bills status:', billsRes.status);
-      console.log('Summary status:', summaryRes.status);
 
       const billsData = await billsRes.json();
       const summaryData = await summaryRes.json();
-
-      console.log('Bills data:', billsData);
-      console.log('Summary data:', summaryData);
 
       if (billsData.success) setBills(billsData.data);
       if (summaryData.success) setSummary(summaryData.data);
     } catch (error) {
       console.error('Fetch error:', error.message);
-      if (error.name === 'AbortError') {
-        console.error('Request timeout - check network connection');
-      }
     } finally {
       setLoading(false);
       setRefreshing(false);

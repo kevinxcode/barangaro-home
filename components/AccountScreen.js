@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import API from '../config/api';
+import { getAPI } from '../config/api';
 
 export default function AccountScreen() {
   const navigation = useNavigation();
@@ -27,6 +27,7 @@ export default function AccountScreen() {
   const handleSignOut = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      const API = getAPI();
       await fetch(API.LOGOUT, {
         method: 'POST',
         headers: { Authorization: token }

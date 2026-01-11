@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import API from '../config/api';
+import { getApiBaseUrl, getAPI } from '../config/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -11,6 +11,19 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    checkApiUrl();
+  }, []);
+
+  const checkApiUrl = async () => {
+    const url = await getApiBaseUrl();
+    if (!url || url === 'http://192.168.1.39:8000') {
+      Alert.alert('Info', 'Silakan konfigurasi URL API terlebih dahulu', [
+        { text: 'OK', onPress: () => navigation.navigate('ApiSettings') }
+      ]);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -20,6 +33,8 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      const API = getAPI();
+      
       const response = await fetch(API.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,12 +47,20 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('session', 'true');
         await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user', JSON.stringify(data.data));
-        navigation.replace('PageHome');
+        
+        if (data.data.status === 'pending') {
+          navigation.replace('PendingVerification');
+        } else {
+          navigation.replace('PageHome');
+        }
       } else {
         Alert.alert('Error', data.message);
       }
     } catch (error) {
-      Alert.alert('Error', 'Gagal terhubung ke server');
+      Alert.alert('Koneksi Gagal', 'Tidak dapat terhubung ke server.', [
+        { text: 'Pengaturan API', onPress: () => navigation.navigate('ApiSettings') },
+        { text: 'Coba Lagi', style: 'cancel' }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -52,6 +75,13 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+      <TouchableOpacity 
+        style={styles.settingsButton}
+        onPress={() => navigation.navigate('ApiSettings')}
+      >
+        <Ionicons name="settings-outline" size={24} color="#a32620" />
+      </TouchableOpacity>
+
       <Image source={require('../assets/icon.png')} style={styles.logo} />
       <Text style={styles.title}>Login</Text>
       
@@ -105,6 +135,15 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    padding: 10,
+    backgroundColor: '#fff5f5',
+    borderRadius: 8,
+    zIndex: 10,
   },
   logo: {
     width: 120,
