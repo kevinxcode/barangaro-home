@@ -17,13 +17,44 @@ export default function PaymentStatusScreen({ route, navigation }) {
   const fetchPaymentDetail = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(API.PAYMENTS_DETAIL(payment.payment_id || payment.id), {
-        headers: { Authorization: token }
-      });
-      const data = await response.json();
-      if (data.success) setPaymentDetail(data.data);
+      console.log('Payment data:', payment);
+      
+      // Cek apakah ini bill data (dari HomeScreen) atau payment data (dari PaymentScreen)
+      const isBillData = payment.bill_type_id !== undefined;
+      
+      if (isBillData) {
+        // Ini dari HomeScreen, cari payment berdasarkan bill_id
+        console.log('Bill data detected, fetching payment by bill_id:', payment.id);
+        const response = await fetch(API.PAYMENTS_HISTORY, {
+          headers: { Authorization: token }
+        });
+        const data = await response.json();
+        console.log('Payment history response:', data);
+        
+        if (data.success) {
+          // Cari payment yang sesuai dengan bill_id dan status pending
+          const foundPayment = data.data.find(p => p.bill_id == payment.id && p.status === 'pending');
+          console.log('Found payment:', foundPayment);
+          if (foundPayment) {
+            setPaymentDetail(foundPayment);
+            console.log('Proof image:', foundPayment.proof_image ? 'EXISTS' : 'NOT FOUND');
+          }
+        }
+      } else {
+        // Ini dari PaymentScreen, langsung fetch by payment_id
+        console.log('Payment data detected, fetching by payment_id:', payment.payment_id || payment.id);
+        const response = await fetch(API.PAYMENTS_DETAIL(payment.payment_id || payment.id), {
+          headers: { Authorization: token }
+        });
+        const data = await response.json();
+        console.log('Payment detail response:', data);
+        if (data.success) {
+          setPaymentDetail(data.data);
+          console.log('Proof image:', data.data?.proof_image ? 'EXISTS' : 'NOT FOUND');
+        }
+      }
     } catch (error) {
-      console.error(error);
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
