@@ -1,21 +1,71 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../config/api';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  
-  const [bills] = useState([
-    { id: 5, type: 'Iuran Warga', month: 'Desember 2025', amount: 100000, status: 'unpaid', icon: 'calendar' },
-    { id: 4, type: 'Iuran Warga', month: 'November 2025', amount: 100000, status: 'pending', icon: 'calendar' },
-    { id: 3, type: 'Iuran Warga', month: 'Oktober 2025', amount: 100000, status: 'paid', icon: 'calendar', verifiedDate: '2025-10-12' },
-    { id: 2, type: 'Iuran Warga', month: 'September 2025', amount: 100000, status: 'paid', icon: 'calendar', verifiedDate: '2025-09-11' },
-    { id: 1, type: 'Iuran Warga', month: 'Agustus 2025', amount: 100000, status: 'paid', icon: 'calendar', verifiedDate: '2025-08-10' },
-  ]);
+  const [bills, setBills] = useState([]);
+  const [summary, setSummary] = useState({ total_unpaid: 0, pending_count: 0 });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const unpaidCount = bills.filter(b => b.status === 'unpaid').length;
-  const totalUnpaid = bills.filter(b => b.status === 'unpaid').reduce((sum, b) => sum + b.amount, 0);
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const fetchData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      console.log('Token:', token);
+      console.log('Fetching from:', API.BILLS);
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      
+      const [billsRes, summaryRes] = await Promise.all([
+        fetch(API.BILLS, { 
+          headers: { Authorization: token },
+          signal: controller.signal 
+        }),
+        fetch(API.BILLS_SUMMARY, { 
+          headers: { Authorization: token },
+          signal: controller.signal 
+        })
+      ]);
+
+      clearTimeout(timeout);
+      console.log('Bills status:', billsRes.status);
+      console.log('Summary status:', summaryRes.status);
+
+      const billsData = await billsRes.json();
+      const summaryData = await summaryRes.json();
+
+      console.log('Bills data:', billsData);
+      console.log('Summary data:', summaryData);
+
+      if (billsData.success) setBills(billsData.data);
+      if (summaryData.success) setSummary(summaryData.data);
+    } catch (error) {
+      console.error('Fetch error:', error.message);
+      if (error.name === 'AbortError') {
+        console.error('Request timeout - check network connection');
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
 
   const handlePayment = (bill) => {
     navigation.navigate('Payment', { bill });
@@ -23,6 +73,12 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#a32620" />
+        </View>
+      ) : (
+      <>
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Iuran Warga</Text>
@@ -30,9 +86,9 @@ export default function HomeScreen() {
         </View>
         <TouchableOpacity style={styles.notifContainer} onPress={() => navigation.navigate('Notification')}>
           <Ionicons name="notifications" size={28} color="#a32620" />
-          {unpaidCount > 0 && (
+          {summary.pending_count > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unpaidCount}</Text>
+              <Text style={styles.badgeText}>{summary.pending_count}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -41,26 +97,37 @@ export default function HomeScreen() {
       <View style={styles.summaryCard}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Total Tagihan</Text>
-          <Text style={styles.summaryValue}>Rp {totalUnpaid.toLocaleString('id-ID')}</Text>
+          <Text style={styles.summaryValue}>Rp {summary.total_unpaid.toLocaleString('id-ID')}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Belum Dibayar</Text>
-          <Text style={styles.summaryCount}>{unpaidCount} Tagihan</Text>
+          <Text style={styles.summaryCount}>{bills.filter(b => b.status === 'unpaid').length} Tagihan</Text>
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#a32620']}
+            tintColor="#a32620"
+          />
+        }
+      >
         <Text style={styles.sectionTitle}>Daftar Tagihan</Text>
         {bills.map(bill => (
           <View key={bill.id} style={styles.billCard}>
             <View style={styles.billIcon}>
-              <Ionicons name={bill.icon} size={28} color="#a32620" />
+              <Ionicons name={bill.icon || 'calendar'} size={28} color="#a32620" />
             </View>
             <View style={styles.billInfo}>
-              <Text style={styles.billType}>{bill.type}</Text>
+              <Text style={styles.billType}>{bill.bill_name}</Text>
               <Text style={styles.billMonth}>{bill.month}</Text>
-              <Text style={styles.billAmount}>Rp {bill.amount.toLocaleString('id-ID')}</Text>
+              <Text style={styles.billAmount}>Rp {parseFloat(bill.amount).toLocaleString('id-ID')}</Text>
             </View>
             {bill.status === 'paid' ? (
               <TouchableOpacity style={styles.paidBadge} onPress={() => navigation.navigate('PaymentVerified', { payment: bill })}>
@@ -80,6 +147,8 @@ export default function HomeScreen() {
           </View>
         ))}
       </ScrollView>
+      </>
+      )}
     </View>
   );
 }
@@ -88,6 +157,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',

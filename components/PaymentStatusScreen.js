@@ -1,13 +1,42 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../config/api';
 
 export default function PaymentStatusScreen({ route, navigation }) {
   const { payment } = route.params;
+  const [paymentDetail, setPaymentDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showImage, setShowImage] = useState(false);
+
+  useEffect(() => {
+    fetchPaymentDetail();
+  }, []);
+
+  const fetchPaymentDetail = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(API.PAYMENTS_DETAIL(payment.payment_id || payment.id), {
+        headers: { Authorization: token }
+      });
+      const data = await response.json();
+      if (data.success) setPaymentDetail(data.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#a32620" />
+        </View>
+      ) : (
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.iconContainer}>
           <Ionicons name="time-outline" size={80} color="#FF9800" />
         </View>
@@ -20,15 +49,19 @@ export default function PaymentStatusScreen({ route, navigation }) {
         <View style={styles.detailCard}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Jenis Iuran</Text>
-            <Text style={styles.detailValue}>{payment.type}</Text>
+            <Text style={styles.detailValue}>{paymentDetail?.bill_name || payment.type}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Periode</Text>
-            <Text style={styles.detailValue}>{payment.month}</Text>
+            <Text style={styles.detailValue}>{paymentDetail?.month || payment.month}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Nominal</Text>
-            <Text style={styles.detailValue}>Rp {payment.amount.toLocaleString('id-ID')}</Text>
+            <Text style={styles.detailValue}>Rp {parseFloat(paymentDetail?.amount || payment.amount).toLocaleString('id-ID')}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Metode Pembayaran</Text>
+            <Text style={styles.detailValue}>{paymentDetail?.payment_method || '-'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Status</Text>
@@ -38,10 +71,37 @@ export default function PaymentStatusScreen({ route, navigation }) {
           </View>
         </View>
 
+        {paymentDetail?.proof_image && (
+          <View style={styles.proofSection}>
+            <Text style={styles.proofLabel}>Bukti Pembayaran</Text>
+            <TouchableOpacity onPress={() => setShowImage(true)}>
+              <Image 
+                source={{ uri: paymentDetail.proof_image }} 
+                style={styles.proofImage}
+              />
+              <Text style={styles.viewFullText}>Tap untuk melihat full</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <Text style={styles.note}>
           Anda akan menerima notifikasi setelah pembayaran diverifikasi.
         </Text>
-      </View>
+      </ScrollView>
+      )}
+
+      <Modal visible={showImage} transparent={true} onRequestClose={() => setShowImage(false)}>
+        <View style={styles.modalContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={() => setShowImage(false)}>
+            <Ionicons name="close-circle" size={40} color="#fff" />
+          </TouchableOpacity>
+          <Image 
+            source={{ uri: paymentDetail?.proof_image }} 
+            style={styles.fullImage}
+            resizeMode="contain"
+          />
+        </View>
+      </Modal>
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('PageHome')}>
@@ -57,11 +117,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   iconContainer: {
     width: 120,
@@ -71,6 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 30,
+    alignSelf: 'center',
   },
   title: {
     fontSize: 24,
@@ -130,6 +194,47 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     fontStyle: 'italic',
+    marginBottom: 20,
+  },
+  proofSection: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  proofLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  proofImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  viewFullText: {
+    textAlign: 'center',
+    color: '#a32620',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 1,
+  },
+  fullImage: {
+    width: '100%',
+    height: '80%',
   },
   footer: {
     padding: 20,

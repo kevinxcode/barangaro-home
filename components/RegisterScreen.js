@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import API from '../config/api';
 
 export default function RegisterScreen({ navigation }) {
   const [formData, setFormData] = useState({
     email: '',
+    password: '',
     nama: '',
     telepon: '',
-    nomorRumah: '',
+    nomor_rumah: '',
   });
   const [ktpImage, setKtpImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const convertToBase64 = async (uri) => {
     const response = await fetch(uri);
@@ -67,20 +70,34 @@ export default function RegisterScreen({ navigation }) {
     );
   };
 
-  const handleRegister = () => {
-    if (!formData.email || !formData.nama || !formData.telepon || !formData.nomorRumah || !ktpImage) {
+  const handleRegister = async () => {
+    if (!formData.email || !formData.password || !formData.nama || !formData.telepon || !formData.nomor_rumah || !ktpImage) {
       Alert.alert('Error', 'Semua field harus diisi');
       return;
     }
-    // Data siap dikirim ke backend dengan ktpImage dalam format base64
-    const dataToSend = {
-      ...formData,
-      foto_ktp: ktpImage, // Base64 string
-    };
-    console.log('Data ready to send:', { ...dataToSend, foto_ktp: 'base64_string...' });
-    Alert.alert('Sukses', 'Pendaftaran berhasil! Menunggu verifikasi admin.', [
-      { text: 'OK', onPress: () => navigation.navigate('Login') }
-    ]);
+
+    setLoading(true);
+    try {
+      const response = await fetch(API.REGISTER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, foto_ktp: ktpImage }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Alert.alert('Sukses', data.message, [
+          { text: 'OK', onPress: () => navigation.navigate('Login') }
+        ]);
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Gagal terhubung ke server');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,6 +113,14 @@ export default function RegisterScreen({ navigation }) {
           onChangeText={(text) => setFormData({ ...formData, email: text })}
           keyboardType="email-address"
           autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={formData.password}
+          onChangeText={(text) => setFormData({ ...formData, password: text })}
+          secureTextEntry
         />
 
         <TextInput
@@ -116,8 +141,8 @@ export default function RegisterScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Nomor Rumah"
-          value={formData.nomorRumah}
-          onChangeText={(text) => setFormData({ ...formData, nomorRumah: text })}
+          value={formData.nomor_rumah}
+          onChangeText={(text) => setFormData({ ...formData, nomor_rumah: text })}
         />
 
         <Text style={styles.label}>Foto KTP</Text>
@@ -132,8 +157,8 @@ export default function RegisterScreen({ navigation }) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Daftar</Text>
+        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Daftar</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>

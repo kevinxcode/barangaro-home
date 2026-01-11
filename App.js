@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from './components/HomeScreen';
 import NewsScreen from './components/NewsScreen';
 import AccountScreen from './components/AccountScreen';
+import TestAPI from './components/TestAPI';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import PaymentScreen from './components/PaymentScreen';
@@ -59,6 +60,11 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName={initialRoute}>
+        <Stack.Screen
+          name="TestAPI"
+          component={TestAPI}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Login"
           component={LoginScreen}

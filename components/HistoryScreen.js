@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import API from '../config/api';
 
 export default function HistoryScreen() {
-  const [history] = useState([
-    { id: 1, type: 'Iuran Warga', month: 'Oktober 2025', amount: 100000, date: '2025-10-12', status: 'Lunas' },
-    { id: 2, type: 'Iuran Warga', month: 'September 2025', amount: 100000, date: '2025-09-11', status: 'Lunas' },
-    { id: 3, type: 'Iuran Warga', month: 'Agustus 2025', amount: 100000, date: '2025-08-10', status: 'Lunas' },
-  ]);
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(API.PAYMENTS_HISTORY, {
+        headers: { Authorization: token }
+      });
+      const data = await response.json();
+      if (data.success) setHistory(data.data.filter(p => p.status === 'verified'));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#a32620" />
+        </View>
+      ) : (
       <ScrollView style={styles.content}>
         {history.map(item => (
           <View key={item.id} style={styles.historyCard}>
@@ -18,17 +41,18 @@ export default function HistoryScreen() {
               <Ionicons name="checkmark-circle" size={40} color="#4CAF50" />
             </View>
             <View style={styles.historyInfo}>
-              <Text style={styles.type}>{item.type}</Text>
+              <Text style={styles.type}>{item.bill_name}</Text>
               <Text style={styles.month}>{item.month}</Text>
-              <Text style={styles.date}>Dibayar: {item.date}</Text>
-              <Text style={styles.amount}>Rp {item.amount.toLocaleString('id-ID')}</Text>
+              <Text style={styles.date}>Dibayar: {item.payment_date?.substring(0, 10)}</Text>
+              <Text style={styles.amount}>Rp {parseFloat(item.amount).toLocaleString('id-ID')}</Text>
             </View>
             <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>{item.status}</Text>
+              <Text style={styles.statusText}>Lunas</Text>
             </View>
           </View>
         ))}
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -37,6 +61,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,

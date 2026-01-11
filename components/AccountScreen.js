@@ -1,39 +1,73 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import API from '../config/api';
 
 export default function AccountScreen() {
   const navigation = useNavigation();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) setUser(JSON.parse(userData));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
-    await AsyncStorage.removeItem('session');
-    navigation.replace('Login');
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await fetch(API.LOGOUT, {
+        method: 'POST',
+        headers: { Authorization: token }
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      await AsyncStorage.multiRemove(['session', 'token', 'user']);
+      navigation.replace('Login');
+    }
   };
 
   return (
     <View style={styles.container}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#a32620" />
+        </View>
+      ) : (
+      <>
       <View style={styles.profileSection}>
         <Text style={styles.title}>Profile</Text>
         
         <View style={styles.infoRow}>
           <Text style={styles.label}>Nama:</Text>
-          <Text style={styles.value}>Admin User</Text>
+          <Text style={styles.value}>{user?.nama || '-'}</Text>
         </View>
         
         <View style={styles.infoRow}>
           <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>admin@example.com</Text>
+          <Text style={styles.value}>{user?.email || '-'}</Text>
         </View>
         
         <View style={styles.infoRow}>
           <Text style={styles.label}>Nomor Rumah:</Text>
-          <Text style={styles.value}>A-123</Text>
+          <Text style={styles.value}>{user?.nomor_rumah || '-'}</Text>
         </View>
         
         <View style={styles.infoRow}>
           <Text style={styles.label}>Nomor Telepon:</Text>
-          <Text style={styles.value}>081234567890</Text>
+          <Text style={styles.value}>{user?.telepon || '-'}</Text>
         </View>
         
         <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate('History')}>
@@ -44,6 +78,8 @@ export default function AccountScreen() {
       <TouchableOpacity style={styles.button} onPress={handleSignOut}>
         <Text style={styles.buttonText}>Sign Out</Text>
       </TouchableOpacity>
+      </>
+      )}
     </View>
   );
 }
@@ -53,6 +89,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileSection: {
     flex: 1,
