@@ -5,7 +5,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import messaging from '@react-native-firebase/messaging';
+import { getApp } from '@react-native-firebase/app';
+import { getMessaging, requestPermission, getToken, subscribeToTopic, onMessage, setBackgroundMessageHandler, AuthorizationStatus } from '@react-native-firebase/messaging';
 import * as Notifications from 'expo-notifications';
 import HomeScreen from './components/HomeScreen';
 import NewsScreen from './components/NewsScreen';
@@ -76,26 +77,28 @@ export default function App() {
   const setupFirebase = async () => {
     console.log('🔥 Setting up Firebase...');
     
-    const authStatus = await messaging().requestPermission();
+    const app = getApp();
+    const messaging = getMessaging(app);
+    const authStatus = await requestPermission(messaging);
     console.log('📱 Auth Status:', authStatus);
     
     const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      authStatus === AuthorizationStatus.AUTHORIZED ||
+      authStatus === AuthorizationStatus.PROVISIONAL;
 
     if (enabled) {
       console.log('✅ Permission granted');
-      const token = await messaging().getToken();
+      const token = await getToken(messaging);
       console.log('🔑 FCM Token:', token);
       
-      await messaging().subscribeToTopic('barangaro_homes');
+      await subscribeToTopic(messaging, 'barangaro_homes');
       console.log('📢 Subscribed to topic: barangaro_homes');
     } else {
       console.log('❌ Permission denied');
     }
 
     // Foreground message handler
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
+    const unsubscribe = onMessage(messaging, async remoteMessage => {
       console.log('📩 Foreground notification received:', JSON.stringify(remoteMessage, null, 2));
       
       await Notifications.scheduleNotificationAsync({
@@ -108,7 +111,7 @@ export default function App() {
     });
 
     // Background message handler
-    messaging().setBackgroundMessageHandler(async remoteMessage => {
+    setBackgroundMessageHandler(messaging, async remoteMessage => {
       console.log('📩 Background notification received:', JSON.stringify(remoteMessage, null, 2));
     });
 
