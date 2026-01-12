@@ -62,23 +62,42 @@ export default function App() {
   useEffect(() => {
     checkSession();
     setupFirebase();
+    
+    // Handle notification tap when app is in background
+    const unsubscribeNotificationResponse = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('👆 Notification tapped:', JSON.stringify(response, null, 2));
+    });
+
+    return () => {
+      unsubscribeNotificationResponse.remove();
+    };
   }, []);
 
   const setupFirebase = async () => {
+    console.log('🔥 Setting up Firebase...');
+    
     const authStatus = await messaging().requestPermission();
+    console.log('📱 Auth Status:', authStatus);
+    
     const enabled =
       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
     if (enabled) {
+      console.log('✅ Permission granted');
       const token = await messaging().getToken();
-      console.log('FCM Token:', token);
+      console.log('🔑 FCM Token:', token);
       
       await messaging().subscribeToTopic('barangaro_homes');
-      console.log('Subscribed to topic: barangaro_homes');
+      console.log('📢 Subscribed to topic: barangaro_homes');
+    } else {
+      console.log('❌ Permission denied');
     }
 
+    // Foreground message handler
     const unsubscribe = messaging().onMessage(async remoteMessage => {
+      console.log('📩 Foreground notification received:', JSON.stringify(remoteMessage, null, 2));
+      
       await Notifications.scheduleNotificationAsync({
         content: {
           title: remoteMessage.notification?.title,
@@ -86,6 +105,11 @@ export default function App() {
         },
         trigger: null,
       });
+    });
+
+    // Background message handler
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      console.log('📩 Background notification received:', JSON.stringify(remoteMessage, null, 2));
     });
 
     return unsubscribe;

@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyCbcsgt_J9HYQqVVOSftihupcRzydpdiXM</string>
+	<string>AIzaSyAj_rMlM9tetEOqalQOE6RHpgqvwvWkElc</string>
 	<key>GCM_SENDER_ID</key>
-	<string>1040815971615</string>
+	<string>47245096396</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.barangaro.homes</string>
 	<key>PROJECT_ID</key>
-	<string>syntra-teknologi</string>
+	<string>barangaro-homes</string>
 	<key>STORAGE_BUCKET</key>
-	<string>syntra-teknologi.firebasestorage.app</string>
+	<string>barangaro-homes.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1040815971615:ios:barangaro001</string>
+	<string>1:47245096396:ios:3bc757b6481187f9075969</string>
 </dict>
 </plist>

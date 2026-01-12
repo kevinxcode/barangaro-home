@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1040815971615",
-    "project_id": "syntra-teknologi",
-    "storage_bucket": "syntra-teknologi.firebasestorage.app"
+    "project_number": "47245096396",
+    "project_id": "barangaro-homes",
+    "storage_bucket": "barangaro-homes.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1040815971615:android:barangaro001",
+        "mobilesdk_app_id": "1:47245096396:android:7ef64413585afe94075969",
         "android_client_info": {
           "package_name": "com.barangaro.homes"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCbcsgt_J9HYQqVVOSftihupcRzydpdiXM"
+          "current_key": "AIzaSyBVYVtqlp1aQyDvjYSAeYMHl6mHLy2VEgA"
         }
       ],
       "services": {
